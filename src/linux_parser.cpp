@@ -65,8 +65,24 @@ vector<int> LinuxParser::Pids() {
   return pids;
 }
 
-// TODO: Read and return the system memory utilization
-float LinuxParser::MemoryUtilization() { return 0.0; }
+/** Returns total memory utilization including caches and buffers. */
+float LinuxParser::MemoryUtilization() {
+  float total, free;
+  string label, line;
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  if (stream.is_open()) {
+    std::getline(stream, line);
+    std::istringstream linestream(line);  // This is TOTAL memeory.
+    linestream >> label >> total;
+
+    std::getline(stream, line);  // This is AVAILABLE memory;
+    linestream.clear();
+    linestream.str(line);
+    linestream >> label >> free;
+  }
+
+  return (total - free) / total;
+}
 
 long long LinuxParser::UpTime() {
   float upTime = 0;
@@ -94,8 +110,24 @@ long LinuxParser::ActiveJiffies() { return 0; }
 // TODO: Read and return the number of idle jiffies for the system
 long LinuxParser::IdleJiffies() { return 0; }
 
-// TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() { return {}; }
+LinuxParser::ProcessorState LinuxParser::CpuUtilization() {
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  std::string line, label;
+  long user, nice, system, idle, iowait, irq, softirq, steal;
+  long cNonIdle, cIdle;
+
+  if (stream.is_open()) {
+    std::getline(stream, line);
+    std::istringstream linestream(line);
+    linestream >> label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+    cNonIdle = user + nice + system + irq + softirq + steal;
+    cIdle = idle + iowait;
+
+    return LinuxParser::ProcessorState{cNonIdle, cIdle};
+  }
+
+  return LinuxParser::ProcessorState{0, 0};
+}
 
 // TODO: Read and return the total number of processes
 int LinuxParser::TotalProcesses() { return 0; }

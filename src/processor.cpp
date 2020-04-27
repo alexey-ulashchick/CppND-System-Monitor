@@ -1,4 +1,16 @@
 #include "processor.h"
+#include "linux_parser.h"
 
-// TODO: Return the aggregate CPU utilization
-float Processor::Utilization() { return 0.0; }
+float Processor::Utilization() {
+  LinuxParser::ProcessorState state = LinuxParser::CpuUtilization();
+
+  long idle = state.idle - this->idle;
+  long nonIdle = state.nonIdle - this->nonIdle;
+
+  float utilization = float(nonIdle) / float(idle + nonIdle);
+
+  this->idle = state.idle;
+  this->nonIdle = state.nonIdle;
+
+  return utilization;
+}
