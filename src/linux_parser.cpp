@@ -1,14 +1,19 @@
+#include "linux_parser.h"
 #include <dirent.h>
 #include <unistd.h>
+#include <iostream>
+#include <map>
 #include <string>
 #include <vector>
-
-#include "linux_parser.h"
 
 using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
+
+long long LinuxParser::ProcessState::TotalTime() {
+  return utime + stime + cutime + cstime;
+}
 
 string LinuxParser::OperatingSystem() {
   string line;
@@ -119,7 +124,8 @@ LinuxParser::ProcessorState LinuxParser::CpuUtilization() {
   if (stream.is_open()) {
     std::getline(stream, line);
     std::istringstream linestream(line);
-    linestream >> label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+    linestream >> label >> user >> nice >> system >> idle >> iowait >> irq >>
+        softirq >> steal;
     cNonIdle = user + nice + system + irq + softirq + steal;
     cIdle = idle + iowait;
 
@@ -129,11 +135,45 @@ LinuxParser::ProcessorState LinuxParser::CpuUtilization() {
   return LinuxParser::ProcessorState{0, 0};
 }
 
-// TODO: Read and return the total number of processes
-int LinuxParser::TotalProcesses() { return 0; }
+int LinuxParser::TotalProcesses() { return LinuxParser::Pids().size(); }
 
-// TODO: Read and return the number of running processes
-int LinuxParser::RunningProcesses() { return 0; }
+int LinuxParser::RunningProcesses() {
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  std::string line, label;
+  int procsRunning;
+
+  if (stream.is_open()) {
+    while (std::getline(stream, line)) {
+      std::istringstream linestream(line);
+      linestream >> label;
+      if (label != "procs_running") continue;
+      linestream >> procsRunning;
+
+      return procsRunning;
+    }
+  }
+
+  return 0;
+}
+
+std::map<int, std::string> LinuxParser::GetAllUsers() {
+  std::map<int, std::string> users{};
+
+  std::ifstream stream(kPasswordPath);
+  std::string line, name, _tmp;
+  int id;
+
+  if (stream.is_open()) {
+    while (std::getline(stream, line)) {
+      std::replace(line.begin(), line.end(), ':', ' ');
+      std::istringstream linestream(line);
+      linestream >> name >> _tmp >> id;
+      users.insert({id, name});
+    }
+  }
+
+  return users;
+}
 
 // TODO: Read and return the command associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
@@ -143,9 +183,51 @@ string LinuxParser::Command(int pid [[maybe_unused]]) { return string(); }
 // REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Ram(int pid [[maybe_unused]]) { return string(); }
 
-// TODO: Read and return the user ID associated with a process
-// REMOVE: [[maybe_unused]] once you define the function
-string LinuxParser::Uid(int pid [[maybe_unused]]) { return string(); }
+int LinuxParser::Uid(int pid) {
+  std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatusFilename);
+  std::string line, key;
+  int uid;
+
+  if (stream.is_open()) {
+    while (std::getline(stream, line)) {
+      std::istringstream linestream(line);
+      linestream >> key;
+      if (key != "Uid:") continue;
+      linestream >> uid;
+
+      return uid;
+    }
+  }
+
+  return uid;
+}
+
+LinuxParser::ProcessState LinuxParser::GetProcessState(int pid) {
+  std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatFilename);
+  std::string line, v;
+  LinuxParser::ProcessState ps;
+
+  if (stream.is_open()) {
+    std::getline(stream, line);
+    std::istringstream linestream(line);
+
+    // Skipping first 1-13 values;
+    for (auto i = 1; i <= 13; i++) {
+      linestream >> v;
+    }
+
+    linestream >> ps.utime >> ps.stime >> ps.cutime >> ps.cstime;
+
+    // Skipping first 18-21 values;
+    for (auto i = 18; i <= 21; i++) {
+      linestream >> v;
+    }
+
+    linestream >> ps.starttime;
+  }
+
+  return ps;
+}
 
 // TODO: Read and return the user associated with a process
 // REMOVE: [[maybe_unused]] once you define the function

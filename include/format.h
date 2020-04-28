@@ -4,7 +4,9 @@
 #include <string>
 
 namespace Format {
+
 std::string ElapsedTime(const long long& totalSeconds);
+
 };
 
 #endif

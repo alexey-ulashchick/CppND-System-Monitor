@@ -1,8 +1,11 @@
 #include <unistd.h>
+#include <algorithm>
 #include <cstddef>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
+#include <iostream>
 
 #include "linux_parser.h"
 #include "process.h"
@@ -14,21 +17,62 @@ using std::size_t;
 using std::string;
 using std::vector;
 
-Processor& System::Cpu() { return processor; }
+void System::Update() {
+  operatingSystem = LinuxParser::OperatingSystem();
+  kernel = LinuxParser::Kernel();
+  memoryUtilization = LinuxParser::MemoryUtilization();
+  runningProcesses = LinuxParser::RunningProcesses();
+  upTime = LinuxParser::UpTime();
 
-// TODO: Return a container composed of the system's processes
-vector<Process>& System::Processes() { return processes_; }
+  processor.Update();
+  System::UpdateProcesses();
+}
 
-std::string System::Kernel() { return LinuxParser::Kernel(); }
+void System::UpdateProcesses() {
+  auto pids = LinuxParser::Pids();
+  std::unordered_set<int> pidsSet(pids.begin(), pids.end());
 
-float System::MemoryUtilization() { return LinuxParser::MemoryUtilization(); }
+  auto it = processes.begin();
+  while (it != processes.end()) {
+    if (pidsSet.find(it->first) == pidsSet.end()) {
+      it = processes.erase(it);
+    } else {
+      it++;
+    }
+  }
 
-std::string System::OperatingSystem() { return LinuxParser::OperatingSystem(); }
+  auto users = LinuxParser::GetAllUsers();
+  auto hz = sysconf(_SC_CLK_TCK);
 
-// TODO: Return the number of processes actively running on the system
-int System::RunningProcesses() { return 0; }
+  for (const int& pid : pidsSet) {
+    auto totalTime = LinuxParser::GetProcessState(pid).TotalTime();
 
-// TODO: Return the total number of processes on the system
-int System::TotalProcesses() { return 0; }
+    if (processes.find(pid) == processes.end()) {
+      auto uid = LinuxParser::Uid(pid);
+      auto it = users.find(uid);
+      auto userName = (it == users.cend()) ? "N/A" : it->second;
+      processes[pid] = Process(pid, userName, hz, totalTime, upTime);
+    } else {
+      processes.at(pid).Update(totalTime, upTime);
+    }
+  }
+}
 
-long long System::UpTime() { return LinuxParser::UpTime(); }
+std::string System::GetOperatingSystem() { return operatingSystem; }
+std::string System::GetKernel() { return kernel; }
+Processor& System::GetProcessor() { return processor; }
+float System::GetMemoryUtilization() { return memoryUtilization; }
+int System::GetTotalProcesses() { return processes.size(); }
+int System::GetRunningProcesses() { return runningProcesses; }
+long long System::GetUpTime() { return LinuxParser::UpTime(); }
+vector<Process> System::GetProcesses() {
+  vector<Process> result;
+
+  for (auto& it : processes) {
+    result.emplace_back(it.second);
+  }
+
+  std::sort(result.begin(), result.end());
+
+  return result;
+}

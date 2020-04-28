@@ -4,16 +4,24 @@
 #include <fstream>
 #include <regex>
 #include <string>
+#include <map>
 
 namespace LinuxParser {
 
 struct ProcessorState {
-  ProcessorState(long nonIdle, long idle): nonIdle{nonIdle}, idle{idle} {};
-
   long nonIdle;
   long idle;
 };
 
+struct ProcessState {
+  long utime;
+  long stime;
+  long cutime;
+  long cstime;
+  long long starttime;
+
+  long long TotalTime();
+};
 
 // Paths
 const std::string kProcDirectory{"/proc/"};
@@ -35,6 +43,7 @@ int TotalProcesses();
 int RunningProcesses();
 std::string OperatingSystem();
 std::string Kernel();
+std::map<int, std::string> GetAllUsers();
 
 // CPU
 // enum CPUStates {
@@ -51,15 +60,20 @@ std::string Kernel();
 // };
 ProcessorState CpuUtilization();
 
+
 long Jiffies();
 long ActiveJiffies();
 long ActiveJiffies(int pid);
 long IdleJiffies();
 
 // Processes
+int Uid(int pid);
+ProcessState GetProcessState(int pid);
+
+
 std::string Command(int pid);
 std::string Ram(int pid);
-std::string Uid(int pid);
+
 std::string User(int pid);
 long int UpTime(int pid);
 };  // namespace LinuxParser

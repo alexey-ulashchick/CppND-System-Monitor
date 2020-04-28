@@ -2,27 +2,37 @@
 #define SYSTEM_H
 
 #include <string>
-#include <vector>
+#include <unordered_map>
 
+#include "linux_parser.h"
 #include "process.h"
 #include "processor.h"
-#include "linux_parser.h"
 
 class System {
  public:
-  Processor& Cpu();                   // TODO: See src/system.cpp
-  std::vector<Process>& Processes();  // TODO: See src/system.cpp
-  float MemoryUtilization();          // TODO: See src/system.cpp
-  long long UpTime();
-  int TotalProcesses();               // TODO: See src/system.cpp
-  int RunningProcesses();             // TODO: See src/system.cpp
-  std::string Kernel();
-  std::string OperatingSystem();
+  /** Updates internal state of the object. */
+  void Update();
 
-  // TODO: Define any necessary private members
+  std::string GetOperatingSystem();
+  std::string GetKernel();
+  Processor& GetProcessor();
+  float GetMemoryUtilization();
+  int GetTotalProcesses();
+  int GetRunningProcesses();
+  long long GetUpTime();
+
+  std::vector<Process> GetProcesses();  // TODO: See src/system.cpp
+
  private:
+  void UpdateProcesses();
+  std::string operatingSystem = "";
+  std::string kernel = "";
   Processor processor = Processor();
-  std::vector<Process> processes_ = {};
+  float memoryUtilization = 0;
+  int runningProcesses = 0;
+  long long upTime = 0;
+
+  std::unordered_map<int, Process> processes{};
 };
 
 #endif

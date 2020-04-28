@@ -1,7 +1,7 @@
 #include "processor.h"
 #include "linux_parser.h"
 
-float Processor::Utilization() {
+void Processor::Update() {
   LinuxParser::ProcessorState state = LinuxParser::CpuUtilization();
 
   long idle = state.idle - this->idle;
@@ -11,6 +11,7 @@ float Processor::Utilization() {
 
   this->idle = state.idle;
   this->nonIdle = state.nonIdle;
-
-  return utilization;
+  this->utilization = utilization;
 }
+
+float Processor::GetUtilization() { return utilization; }

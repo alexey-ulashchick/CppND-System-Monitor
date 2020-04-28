@@ -3,11 +3,19 @@
 
 class Processor {
  public:
-  float Utilization();
+  /** Updates state of prcessor. */
+  void Update();
+  /**
+   * Calculated processor utilization. Value represents utilization of
+   * multi-core CPU during in the time range between two recent consecutive
+   * calls of Update method.
+   * */
+  float GetUtilization();
 
  private:
-  long nonIdle = 0;
-  long idle = 0;
+  float utilization = 0;
+  long nonIdle = 0;  // Handles previous NON-IDLE value
+  long idle = 0;     // Handles previous IDLE value
 };
 
 #endif
