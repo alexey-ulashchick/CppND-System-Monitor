@@ -6,7 +6,5 @@
 
 int main() {
   System system;
-  system.Update();
-
   NCursesDisplay::Display(system);
 }

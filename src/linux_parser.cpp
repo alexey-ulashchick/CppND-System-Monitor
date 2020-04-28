@@ -83,7 +83,7 @@ float LinuxParser::MemoryUtilization() {
     std::istringstream linestream(line);  // This is TOTAL memeory.
     linestream >> label >> total;
 
-    std::getline(stream, line);  // This is AVAILABLE memory;
+    std::getline(stream, line);  // This is AVAILABLE memory.
     linestream.clear();
     linestream.str(line);
     linestream >> label >> free;
