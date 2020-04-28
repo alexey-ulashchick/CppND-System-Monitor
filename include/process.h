@@ -2,38 +2,63 @@
 #define PROCESS_H
 
 #include <string>
-/*
-Basic class for Process representation
-It contains relevant attributes as shown below
-*/
+
+/**
+ * Basic class for Process representation.
+ * It contains relevant attributes as shown below.
+ */
 class Process {
  public:
   Process() = default;
-  Process(int pid, std::string user, float hz, long long prevTotalTime,
-          long long prveUpTime)
+  /**
+   * Constucts process object. Stores PID, where:
+   *    pid           - process ID,
+   *    user          - process owner name,
+   *    command       - command name,
+   *    ram           - amount of RAM used by process,
+   *    startTime     - process start time,
+   *    hz            - number of clock ticks per second configured in Kernel,
+   *    totalTime     - total time in processor ticks that this process used,
+   *    upTime        - total time since syste was started.
+   */
+  Process(int pid, std::string user, std::string command, std::string ram,
+          long long startTime, float hz, long long totalTime, long long upTime)
       : pid{pid},
         user{user},
+        command{command},
+        ram{ram},
+        startTime{startTime},
         hz{hz},
-        prevTotalTime{prevTotalTime},
-        prveUpTime{prveUpTime} {};
+        prevTotalTime{totalTime},
+        prveUpTime{upTime} {};
 
-  void Update(const long long& nextTotalTime, const long long& nextUpTime);
+  /**
+   * Updates state of the process and recalculates utilization.
+   *    nextTotalTime - total time in processor ticks that this process used,
+   *    upTime        - total time in processor ticks since it was started.
+   */
+  void Update(const long long& nextTotalTime, const long long& nextUpTime,
+              const long long& startTime);
 
-  int GetPid();
-  std::string GetUser();
-  float GetCpuUtilization();
+  const int& GetPid();
+  const float& GetCpuUtilization();
+  long long GetUpTime();
+  const std::string& GetUser();
+  const std::string& GetCommand();
+  const std::string& GetRam();
 
-  std::string Command();                   // TODO: See src/process.cpp
-  std::string Ram();                       // TODO: See src/process.cpp
-  long int UpTime();                       // TODO: See src/process.cpp
-  bool operator<(Process const& a) const;  // TODO: See src/process.cpp
+  bool operator<(Process const& a) const;
 
  private:
   int pid;
   std::string user;
+  std::string command;
+  std::string ram;
+  long long startTime;
   float hz;
   long long prevTotalTime;
   long long prveUpTime;
+
   float utilization = 0;
 };
 

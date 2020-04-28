@@ -4,7 +4,7 @@
 #include <fstream>
 #include <regex>
 #include <string>
-#include <map>
+#include <unordered_map>
 
 namespace LinuxParser {
 
@@ -36,46 +36,24 @@ const std::string kOSPath{"/etc/os-release"};
 const std::string kPasswordPath{"/etc/passwd"};
 
 // System
-float MemoryUtilization();
-long long UpTime();
-std::vector<int> Pids();
-int TotalProcesses();
-int RunningProcesses();
 std::string OperatingSystem();
 std::string Kernel();
-std::map<int, std::string> GetAllUsers();
 
-// CPU
-// enum CPUStates {
-//   kUser_ = 0,
-//   kNice_,
-//   kSystem_,
-//   kIdle_,
-//   kIOwait_,
-//   kIRQ_,
-//   kSoftIRQ_,
-//   kSteal_,
-//   kGuest_,
-//   kGuestNice_
-// };
 ProcessorState CpuUtilization();
+float MemoryUtilization();
 
+int TotalProcesses();
+int RunningProcesses();
+long long UpTime();
 
-long Jiffies();
-long ActiveJiffies();
-long ActiveJiffies(int pid);
-long IdleJiffies();
+std::unordered_map<int, std::string> GetAllUsers();
+std::vector<int> Pids();
 
 // Processes
 int Uid(int pid);
 ProcessState GetProcessState(int pid);
-
-
 std::string Command(int pid);
 std::string Ram(int pid);
-
-std::string User(int pid);
-long int UpTime(int pid);
 };  // namespace LinuxParser
 
 #endif

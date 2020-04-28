@@ -1,11 +1,11 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cstddef>
+#include <iostream>
 #include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <iostream>
 
 #include "linux_parser.h"
 #include "process.h"
@@ -32,6 +32,7 @@ void System::UpdateProcesses() {
   auto pids = LinuxParser::Pids();
   std::unordered_set<int> pidsSet(pids.begin(), pids.end());
 
+  // Clean up list of stale processes.
   auto it = processes.begin();
   while (it != processes.end()) {
     if (pidsSet.find(it->first) == pidsSet.end()) {
@@ -44,16 +45,22 @@ void System::UpdateProcesses() {
   auto users = LinuxParser::GetAllUsers();
   auto hz = sysconf(_SC_CLK_TCK);
 
+  // Creates or updates processes.
   for (const int& pid : pidsSet) {
-    auto totalTime = LinuxParser::GetProcessState(pid).TotalTime();
+    auto processState = LinuxParser::GetProcessState(pid);
 
     if (processes.find(pid) == processes.end()) {
       auto uid = LinuxParser::Uid(pid);
+      auto command = LinuxParser::Command(pid);
+      auto ram = LinuxParser::Ram(pid);
       auto it = users.find(uid);
       auto userName = (it == users.cend()) ? "N/A" : it->second;
-      processes[pid] = Process(pid, userName, hz, totalTime, upTime);
+      processes[pid] =
+          Process(pid, userName, command, ram, processState.starttime, hz,
+                  processState.TotalTime(), upTime);
     } else {
-      processes.at(pid).Update(totalTime, upTime);
+      processes.at(pid).Update(processState.TotalTime(), upTime,
+                               processState.starttime);
     }
   }
 }
